@@ -1,35 +1,45 @@
 import json
-import itertools
+
+from row_indices_dict import row_indices_dict
 
 
-def load_standard_layers(row_indices, standard_layers, output_keymod_json):
+def update_layer_with_row(layer, standard_layer, row_indices):
+    for row, indices in row_indices.items():
+        for i, key_setting in zip(indices, standard_layer[row]):
+            layer[i] = key_setting
+    return layer
+
+
+def update_keymod_dict(keymod_dict, row_indices, standard_layers,
+                       initial_key_setting='KC_TRNS'):
+    # 引入局部变量layers，减少了多次书写`keymod_dict['layers']`
+    layers = keymod_dict['layers']
     for layer_index, standard_layer in enumerate(standard_layers.values()):
-        for row, indices in row_indices.items():
-            for i, value in zip(indices, standard_layer[row]):
-                output_keymod_json['layers'][layer_index][i] = value
-    return output_keymod_json
+        layer = layers[layer_index]
+        if layer_index != 0:
+            layer = [initial_key_setting] * len(layer)
+        layers[layer_index] = update_layer_with_row(
+            layer, standard_layer, row_indices)
+    return keymod_dict
 
 
-if __name__ == '__main__':
+def update_keymod_json(keymod_json_path, keyboard):
+    # 读取保存按键设置的JSON文件
+    with open(keymod_json_path) as json_file:
+        keymod_dict = json.load(json_file)
+
+    row_indices = row_indices_dict.get(keyboard)
+
     with open('standard_layers.json') as json_file:
         standard_layers = json.load(json_file)
 
-    with open('neoergo_keymod.json') as json_file:
-        neoergo = json.load(json_file)
-
-    neoergo_row_indices = {
-        "r4": itertools.chain(range(0, 7), range(8, 11)),    # {GRV}1234...9，共10个键
-        "r3": range(16, 27),    # {TAB}QWER...P，共11个键
-        "r2": range(31, 43),    # {CAPS}ASDF...{QUOT}，共12个键
-        "r1_2": itertools.chain(range(47, 52), range(53, 58)),  # ZXCV...{SLSH}，共10个键
-        # {LCTL}{LGUI}{LALT}{SPC}{SPC}{RALT}{APP}{RCTL}，共8个键
-        "r1_1": [61, 62, 63, 66, 67, 70, 72, 74],
-    }
-
-    neoergo = load_standard_layers(
-        row_indices=neoergo_row_indices, standard_layers=standard_layers, output_keymod_json=neoergo
-    )
+    keymod_dict = update_keymod_dict(
+        keymod_dict, row_indices, standard_layers)
 
     # 保存
-    with open('neoergo_keymod.json', 'w') as outfile:
-        json.dump(neoergo, outfile)
+    with open(keymod_json_path, 'w') as outfile:
+        json.dump(keymod_dict, outfile)
+
+
+if __name__ == '__main__':
+    update_keymod_json('neoergo_keymod.json', 'Neo Ergo')
