@@ -47,11 +47,12 @@ def extract_and_normalize_keymod(input_path, input_layer_indices, keyboard):
     """
     with open(input_path) as json_file:
         input_keymod_dict = json.load(json_file)
-    layer_names = ['baselayer', 'altlayer1', 'altlayer2']
+    standard_layer_names = ['base_layer', 'alt_layer1', 'alt_layer2']
     standard_keymod_dict = {
         name: extract_layer_key_settings(
             input_keymod_dict, layer_index, keyboard)
-        for (name, layer_index) in zip(layer_names, input_layer_indices)
+        for (name, layer_index) in zip(
+            standard_layer_names, input_layer_indices)
     }
     standard_keymod_dict = normalize_layer_indices(standard_keymod_dict,
                                                    input_layer_indices)
