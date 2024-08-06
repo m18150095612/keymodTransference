@@ -1,20 +1,21 @@
 import json
+import sys
 
-from row_indices_dict import row_indices_dict
+from keyboards_info import keyboards_info
 
 
-def extract_layer_key_settings(input_keymod_dict, layer_index, keyboard):
-    input_layer = input_keymod_dict['layers'][layer_index]
-    row_indices = row_indices_dict.get(keyboard)
-    standard_layer = {}
-    for row, indices in row_indices.items():
-        standard_layer[row] = [input_layer[i] for i in indices]
+def extract_layer_key_settings(layer_index, keyboard):
+    keyboard_info = keyboards_info[keyboard]
+    keymod_json_path = keyboard_info['keymod_json_path']
+    row_indices = keyboard_info['row_indices']
+
+    with open(keymod_json_path) as json_file:
+        keymod_dict = json.load(json_file)
+    layer = keymod_dict['layers'][layer_index]
+
+    standard_layer = {row: [layer[i] for i in indices]
+                      for (row, indices) in row_indices.items()}
     return standard_layer
-
-
-def extract_macro(input_keymod_dict):
-    extracted = input_keymod_dict['macro']
-    return extracted
 
 
 def normalize_layer_indices(standard_keymod_dict, input_layer_indices):
@@ -27,13 +28,19 @@ def normalize_layer_indices(standard_keymod_dict, input_layer_indices):
     return json.loads(normalized)
 
 
-def extract_and_normalize_keymod(input_path, input_layer_indices, keyboard):
+def extract_macros(keyboard):
+    keymod_json_path = keyboards_info[keyboard]['keymod_json_path']
+    with open(keymod_json_path) as json_file:
+        keymod_dict = json.load(json_file)
+    return keymod_dict['macros']
+
+
+def extract_and_normalize_keymod(keyboard):
     """
     提取特定键盘via改键存档（json文件）中的指定层指定分区的按键设置，标准化层索引，并提取宏设置。
 
     参数:
         input_path (str): 输入的json文件路径。
-        input_layer_indices (list): 指定要提取的层索引列表。
         keyboard (str): 指定所提取文件对应的键盘名。
 
     返回:
@@ -45,24 +52,22 @@ def extract_and_normalize_keymod(input_path, input_layer_indices, keyboard):
         3. 提取宏设置。
         4. 将标准化后的键盘设置保存到新的json文件中。
     """
-    with open(input_path) as json_file:
-        input_keymod_dict = json.load(json_file)
+    # 使用`input_`前缀的变量名，以和函数`normalize_layer_indices`的参数名统一
+    input_layer_indices = keyboards_info[keyboard]['layer_indices']
+
     standard_layer_names = ['base_layer', 'alt_layer1', 'alt_layer2']
     standard_keymod_dict = {
-        name: extract_layer_key_settings(
-            input_keymod_dict, layer_index, keyboard)
-        for (name, layer_index) in zip(
-            standard_layer_names, input_layer_indices)
+        name: extract_layer_key_settings(layer_index, keyboard)
+        for (name, layer_index) in zip(standard_layer_names, input_layer_indices)
     }
     standard_keymod_dict = normalize_layer_indices(standard_keymod_dict,
                                                    input_layer_indices)
-    standard_keymod_dict['macros'] = input_keymod_dict.get('macros')
+    standard_keymod_dict['macros'] = extract_macros(keyboard)
+
     with open('standard_keymod.json', 'w') as output_file:
         json.dump(standard_keymod_dict, output_file, indent=4)
     return standard_keymod_dict
 
 
 if __name__ == '__main__':
-    extract_and_normalize_keymod(input_path='nuphyair75v2_keymod.json',
-                                 input_layer_indices=[2, 5, 6],
-                                 keyboard='NuPhy Air 75 V2')
+    extract_and_normalize_keymod(sys.argv[1])
