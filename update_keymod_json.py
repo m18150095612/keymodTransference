@@ -15,6 +15,16 @@ def update_layer_with_row(layer, standard_layer, keyboard):
     return layer
 
 
+def replace_layer_indices(keymod_dict, layer_indices):
+    keymod_str = json.dumps(keymod_dict)
+    replaced = keymod_str.replace(
+        'LT(1', f'LT({layer_indices[1]}'
+    ).replace(
+        'LT(2', f'LT({layer_indices[2]}'
+    )
+    return json.loads(replaced)
+
+
 def update_keymod_json(keyboard, initial_key_setting='KC_TRNS'):
     """
     Update the keymod JSON configuration for the given keyboard.
@@ -33,10 +43,10 @@ def update_keymod_json(keyboard, initial_key_setting='KC_TRNS'):
 
     # Read the standard keymod JSON file
     with open('standard_keymod.json') as json_file:
-        standard_keymod = json.load(json_file)
+        standard_keymod_dict = json.load(json_file)
 
     standard_layer_names = ['base_layer', 'alt_layer1', 'alt_layer2']
-    standard_layers = [v for (k, v) in standard_keymod.items() if k in standard_layer_names]
+    standard_layers = [v for (k, v) in standard_keymod_dict.items() if k in standard_layer_names]
 
     # Update layers with the standard settings
     for layer_index, standard_layer, name in zip(layer_indices, standard_layers, standard_layer_names):
@@ -46,9 +56,11 @@ def update_keymod_json(keyboard, initial_key_setting='KC_TRNS'):
             layer = [initial_key_setting] * len(layer)
         layers[layer_index] = update_layer_with_row(layer, standard_layer, keyboard)
 
+    keymod_dict = replace_layer_indices(keymod_dict, layer_indices)
+
     # Update macros
     default = [''] * 16
-    keymod_dict['macros'] = standard_keymod.get('macros', default)
+    keymod_dict['macros'] = standard_keymod_dict.get('macros', default)
 
     # Save the updated keymod configuration back to the JSON file
     with open(keymod_json_path, 'w') as outfile:

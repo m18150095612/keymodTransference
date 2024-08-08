@@ -69,5 +69,4 @@ def extract_and_normalize_keymod(keyboard):
 
 
 if __name__ == '__main__':
-    # extract_and_normalize_keymod(sys.argv[1])
-    extract_and_normalize_keymod('Keychron Q3')
+    extract_and_normalize_keymod(sys.argv[1])
