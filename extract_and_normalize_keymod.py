@@ -40,7 +40,6 @@ def extract_and_normalize_keymod(keyboard):
     提取特定键盘via改键存档（json文件）中的指定层指定分区的按键设置，标准化层索引，并提取宏设置。
 
     参数:
-        input_path (str): 输入的json文件路径。
         keyboard (str): 指定所提取文件对应的键盘名。
 
     返回:
@@ -70,4 +69,5 @@ def extract_and_normalize_keymod(keyboard):
 
 
 if __name__ == '__main__':
-    extract_and_normalize_keymod(sys.argv[1])
+    # extract_and_normalize_keymod(sys.argv[1])
+    extract_and_normalize_keymod('Keychron Q3')

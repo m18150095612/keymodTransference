@@ -9,21 +9,18 @@
 | r3 | {TAB}QWER...P | 11 |
 | r2 | {CAPS}ASDF...{QUOT} | 12 |
 | r1_2 | ZXCV...{SLSH}{RSFT} | 11 |
-| r1_1 | {LCTL}{LGUI}{LALT}{SPC}{SPC}{RALT}{APP}{RCTL} | 8 |
+| r1_1 | {LCTL}{LGUI}{LALT}{SPC}{SPC}{RALT}{APP}{APP}{RCTL} | 9 |
 """
-
-import itertools
-
 keyboards_info = {
     'Neo Ergo': {
         'keymod_json_path': 'neoergo_keymod.json',
-        'layer_indices': [0, 1, 2],
+        'layer_indices': range(3),
         'row_indices': {
-            'r4': itertools.chain(range(2, 7), range(8, 11)),
+            'r4': list(range(2, 7)) + list(range(8, 11)),
             'r3': range(16, 27),
             'r2': range(31, 43),
-            'r1_2': itertools.chain(range(47, 52), range(53, 59)),
-            'r1_1': [61, 62, 63, 66, 67, 70, 72, 74],
+            'r1_2': list(range(47, 52)) + list(range(53, 59)),
+            'r1_1': list(range(61, 64)) + [66, 67, 70] + [72] * 2 + [74],
         },
     },
     'NuPhy Air 75 V2': {
@@ -33,8 +30,19 @@ keyboards_info = {
             'r4': range(19, 27),
             'r3': range(34, 45),
             'r2': range(51, 63),
-            'r1_2': itertools.chain(range(70, 80), [81]),
-            'r1_1': [85, 86, 87, 91, 91, 94, 95, 65],
+            'r1_2': list(range(70, 80)) + [81],
+            'r1_1': list(range(85, 88)) + [91] * 2 + [94] + [95] * 2 + [65],
+        },
+    },
+    'Keychron Q3': {
+        'keymod_json_path': 'keychronq3_keymod.json',
+        'layer_indices': range(3),
+        'row_indices': {
+            'r4': range(18, 26),
+            'r3': range(32, 43),
+            'r2': range(48, 60),
+            'r1_2': list(range(66, 76)) + [77],
+            'r1_1': list(range(80, 83)) + [86] * 2 + list(range(90, 94)),
         },
     },
 }
