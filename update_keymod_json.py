@@ -4,70 +4,98 @@ import sys
 from keyboards_info import keyboards_info
 
 
-def update_layer_with_row(layer, standard_layer, keyboard):
-    """
-    Update the given layer with the standard key settings.
-    """
-    row_indices = keyboards_info.get(keyboard).get('row_indices')
-    for row, indices in row_indices.items():
-        for i, key_setting in zip(indices, standard_layer[row]):
-            layer[i] = key_setting
-    return layer
+class KeymodProcessor:
+    def __init__(self, keyboard):
+        """
+        初始化 KeymodProcessor 类的实例。
+
+        参数:
+        - keyboard (str): 键盘的名称，用于获取键盘配置信息。
+        """
+        self.keyboard = keyboard
+        self.keyboard_info = keyboards_info[keyboard]
+        self.keymod_json_path = self.keyboard_info['keymod_json_path']
+        self.layer_indices = self.keyboard_info['layer_indices']
+        self.row_indices = self.keyboard_info['row_indices']
+        # 将所有行分区的按键索引拼接成一个列表
+        self.key_indices = sum(self.row_indices.values(), [])
+
+        # 读取当前键盘的 keymod JSON 文件
+        with open(self.keymod_json_path) as json_file:
+            self.keymod_dict = json.load(json_file)
+
+        # 读取标准 keymod JSON 文件
+        with open('standard_keymod.json') as json_file:
+            self.standard_keymod_dict = json.load(json_file)
+
+        self.standard_layer_names = ['base_layer', 'alt_layer1', 'alt_layer2']
 
 
-def replace_layer_indices(keymod_dict, layer_indices):
-    keymod_str = json.dumps(keymod_dict)
-    replaced = keymod_str.replace(
-        'LT(1', f'LT({layer_indices[1]}'
-    ).replace(
-        'LT(2', f'LT({layer_indices[2]}'
-    )
-    return json.loads(replaced)
+class KeymodUpdateProcessor(KeymodProcessor):
+    def __init__(self, keyboard, initial_key_setting='KC_TRNS'):
+        """
+        初始化 KeymodUpdateProcessor 类，设置初始按键配置。
+        """
+        super().__init__(keyboard)
+        self.initial_key_setting = initial_key_setting
 
+    def update_layer(self, standard_layer_name):
+        """
+        更新指定层中的按键设定。
+        """
+        # 将标准 keymod 中的指定层所有行分区的按键设定拼接成一个列表
+        key_settings = sum(self.standard_keymod_dict[standard_layer_name].values(), [])
+        layer_index = self.layer_indices[
+            self.standard_layer_names.index(standard_layer_name)]
+        if standard_layer_name != 'base_layer':
+            self.keymod_dict['layers'][layer_index] = [self.initial_key_setting] * len(
+                self.keymod_dict['layers'][layer_index])
+        for key_index, key_setting in zip(self.key_indices, key_settings):
+            self.keymod_dict['layers'][layer_index][key_index] = key_setting
 
-def update_keymod_json(keyboard, initial_key_setting='KC_TRNS'):
-    """
-    Update the keymod JSON configuration for the given keyboard.
-    """
-    # Read keyboard information
-    keyboard_info = keyboards_info[keyboard]
-    keymod_json_path = keyboard_info['keymod_json_path']
-    layer_indices = keyboard_info['layer_indices']
+    def update_layers(self):
+        """
+        使用标准按键设定更新键盘。
+        """
+        for standard_layer_name in self.standard_layer_names:
+            self.update_layer(standard_layer_name)
 
-    # Read the current keymod JSON file
-    with open(keymod_json_path) as json_file:
-        keymod_dict = json.load(json_file)
+    def replace_layer_indices(self):
+        """
+        替换键盘映射中的层索引。
+        """
+        keymod_str = json.dumps(self.keymod_dict)
+        replaced = keymod_str.replace(
+            'LT(1', f'LT({self.layer_indices[1]}'
+        ).replace(
+            'LT(2', f'LT({self.layer_indices[2]}'
+        )
+        self.keymod_dict = json.loads(replaced)
 
-    # Introduce local variable layers to avoid multiple accesses to `keymod_dict['layers']`
-    layers = keymod_dict['layers']
+    def update_macros(self):
+        """
+        更新宏设置。
+        """
+        default = [''] * 16
+        self.keymod_dict['macros'] = self.standard_keymod_dict.get('macros', default)
 
-    # Read the standard keymod JSON file
-    with open('standard_keymod.json') as json_file:
-        standard_keymod_dict = json.load(json_file)
+    def save_keymod_json(self):
+        """
+        将更新后的 keymod 配置保存回 JSON 文件。
+        """
+        with open(self.keymod_json_path, 'w') as outfile:
+            json.dump(self.keymod_dict, outfile, indent=2)
 
-    standard_layer_names = ['base_layer', 'alt_layer1', 'alt_layer2']
-    standard_layers = [v for (k, v) in standard_keymod_dict.items() if k in standard_layer_names]
-
-    # Update layers with the standard settings
-    for layer_index, standard_layer, name in zip(layer_indices, standard_layers, standard_layer_names):
-        layer = layers[layer_index]
-        # Initialize key settings for non-base layers
-        if name != 'base_layer':
-            layer = [initial_key_setting] * len(layer)
-        layers[layer_index] = update_layer_with_row(layer, standard_layer, keyboard)
-
-    keymod_dict = replace_layer_indices(keymod_dict, layer_indices)
-
-    # Update macros
-    default = [''] * 16
-    keymod_dict['macros'] = standard_keymod_dict.get('macros', default)
-
-    # Save the updated keymod configuration back to the JSON file
-    with open(keymod_json_path, 'w') as outfile:
-        json.dump(keymod_dict, outfile)
-
-    return keymod_dict
+    def process(self):
+        """
+        执行更新流程，包括层配置和宏配置的更新，并保存到文件。
+        """
+        self.update_layers()
+        self.replace_layer_indices()
+        self.update_macros()
+        self.save_keymod_json()
 
 
 if __name__ == '__main__':
-    update_keymod_json(*sys.argv[1:])
+    processor = KeymodUpdateProcessor(*sys.argv[1:])
+    processor.process()
