@@ -45,4 +45,15 @@ keyboards_info = {
             'r1_1': list(range(80, 83)) + [86, 90, 91],
         },
     },
+    'CIDOO QK61': {
+        'keymod_json_path': 'cidooqk61_keymod.json',
+        'layer_indices': range(3),
+        'row_indices': {
+            'r4': list(range(2, 10)),
+            'r3': list(range(14, 25)),
+            'r2': list(range(28, 40)),
+            'r1_2': list(range(43, 54)),
+            'r1_1': list(range(56, 62)),
+        },
+    },
 }
