@@ -69,8 +69,7 @@ class KeymodUpdateProcessor(KeymodProcessor):
         """
         更新宏设置。
         """
-        default = [''] * 16
-        self.keymod_dict['macros'] = self.standard_keymod_dict.get('macros', default)
+        self.keymod_dict['macros'] = self.standard_keymod_dict['macros']
 
     def save_keymod_json(self):
         """
@@ -153,10 +152,11 @@ class KeymodExtractProcessor(KeymodProcessor):
 
     def extract_macros(self):
         """
-        提取宏设置，如果没有宏设置，则使用默认值
+        提取宏设置
         """
-        default = [''] * 16
-        self.standard_keymod_dict['macros'] = self.keymod_dict.get('macros', default)
+        macros = self.standard_keymod_dict.get('macros', [])
+        if macros:
+            self.standard_keymod_dict['macros'] = macros
 
     def save_standard_keymod_json(self):
         """
